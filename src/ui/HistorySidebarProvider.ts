@@ -29,7 +29,21 @@ export class HistorySidebarProvider implements vscode.WebviewViewProvider {
                     }
 
             else if(msg.type === 'apply_snapshot'){
-                console.log("apply");
+                if(!this.currentDocUri) return;
+                const index = msg.index;
+                const snapshot = this.store.getByIndex(index, this.currentDocUri);
+                if(!snapshot) return;
+
+                const editor = vscode.window.visibleTextEditors.find(e =>
+                    e.document.uri.toString() === this.currentDocUri?.toString()
+                );
+
+                if(!editor) return;
+
+                const doc = editor.document;
+                const fullrange = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
+
+                editor.edit(e => e.replace(fullrange, snapshot.text));
             }
                 });
     }
@@ -66,7 +80,8 @@ export class HistorySidebarProvider implements vscode.WebviewViewProvider {
                 const btn = document.getElementById('apply_btn');
                 btn.onclick = () => {
                     vscode.postMessage({
-                    type: 'apply_snapshot'
+                    type: 'apply_snapshot',
+                    index: Number(slider.value)
                     });
                 };
             </script>
